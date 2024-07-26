@@ -1,0 +1,2 @@
+[webservers]
+seu_servidor_ip ansible_user=ubuntu 

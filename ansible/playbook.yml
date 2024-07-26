@@ -1,0 +1,27 @@
+---
+- name: Configurar servidor web para OpenAGI
+  hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Atualizar APT e instalar Nginx
+      apt:
+        update_cache: yes
+        name: nginx
+        state: present
+
+    - name: Copiar arquivo index.html para o servidor
+      copy:
+        src: ../site/index.html
+        dest: /var/www/html/index.html
+
+    - name: Copiar arquivo styles.css para o servidor
+      copy:
+        src: ../site/styles.css
+        dest: /var/www/html/styles.css
+
+    - name: Iniciar Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
