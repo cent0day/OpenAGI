@@ -4,12 +4,21 @@
   become: yes
   become_user: root
 
+  vars:
+    domain_name: "192.168.1.237"
+    ssl_certificate_path: "/etc/ssl/certs/selfsigned.crt"
+    ssl_certificate_key_path: "/etc/ssl/private/selfsigned.key"
+
   tasks:
-    - name: Update APT and install Nginx
+    - name: Update APT and install necessary packages
       apt:
         update_cache: yes
-        name: nginx
+        name: "{{ item }}"
         state: present
+      loop:
+        - nginx
+        - ufw
+        - openssl
 
     - name: Copy index.html to the server
       copy:
@@ -21,9 +30,16 @@
         src: ../site/styles.css
         dest: /var/www/html/styles.css
 
+    - name: Generate a self-signed certificate
+      command: >
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048
+        -keyout {{ ssl_certificate_key_path }}
+        -out {{ ssl_certificate_path }}
+        -subj "/CN={{ domain_name }}"
+
     - name: Copy Nginx configuration file to the server
-      copy:
-        src: ../nginx/openagi.conf
+      template:
+        src: ../nginx/openagi_ssl.conf.j2
         dest: /etc/nginx/sites-available/openagi.conf
 
     - name: Create symbolic link to enable Nginx configuration
@@ -45,3 +61,8 @@
         name: nginx
         state: restarted
         enabled: yes
+
+    - name: Allow 'Nginx Full' profile in UFW
+      ufw:
+        rule: allow
+        name: "Nginx Full"
